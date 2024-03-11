@@ -21,6 +21,8 @@ static const char COMPILE_DATE_TIME[] = "";
 //#define LOG_TO_SERIAL
 #define DEBUG_SW_BAUDRATE         19200
 
+//#define LILYGOTCAN485
+
 //#define DEBUG_JTAG
 //#define BPN
 #define INSIDER_V1
@@ -107,7 +109,11 @@ static const char COMPILE_DATE_TIME[] = "";
 #define TACHO_ADDR0                   6
 #define TACHO_ADDR1                   7
 #define TACHO_ADDR2                  15
-#define TACHO_GPIO                   27
+#ifdef LILYGOTCAN485
+  #define TACHO_GPIO                   12
+#else
+  #define TACHO_GPIO                   27
+#endif
 #define TACHO_MEAS_TIME            3000
 
 //Onewire
@@ -139,8 +145,30 @@ enum serialRxTxEn_e {serialRxTx_RxTxDisable, serialRxTx_TxEn, serialRxTx_RxEn};
 #define SERIAL3_PIN_TX_EN             3
 #define SERIAL3_PIN_RX_EN            32
 
+//LILYGOTCAN485
+#define PIN_5V_EN 16
+
+#define RS485_EN_PIN 17 // 17 /RE
+#define RS485_TX_PIN 22 // 21
+#define RS485_RX_PIN 21 // 22
+#define RS485_SE_PIN 19 // 22 /SHDN
+#define CAN_SE_PIN 23
+
+//CAN
+#ifdef LILYGOTCAN485
+  #define CAN_TX_PIN GPIO_NUM_27
+  #define CAN_RX_PIN GPIO_NUM_26
+#else
+  #define CAN_TX_PIN GPIO_NUM_4
+  #define CAN_RX_PIN GPIO_NUM_5
+#endif
+
 //Onewire (Temperatur)
-#define OW_PIN                       19
+#ifdef LILYGOTCAN485
+  #define OW_PIN                       5
+#else
+  #define OW_PIN                       19
+#endif
 #define COUNT_TEMP_RULES             10
 
 //I2C
@@ -149,8 +177,13 @@ enum serialRxTxEn_e {serialRxTx_RxTxDisable, serialRxTx_TxEn, serialRxTx_RxEn};
 #define I2C_DEV_ADDR_SLAVE1           16
 #define I2C_DEV_ADDR_SLAVE2           17
 #define I2C_DEV_ADDR_SERIAL_EXTENSION 32
-#define I2C_SDA_PIN                   21
-#define I2C_SCL_PIN                   22
+#ifdef LILYGOTCAN485
+  #define I2C_SDA_PIN                   32
+  #define I2C_SCL_PIN                   33
+#else
+  #define I2C_SDA_PIN                   21
+  #define I2C_SCL_PIN                   22
+#endif
 #define I2C_FREQUENCY           1000000U
 //#define I2C_FREQUENCY           400000U
 #define I2C_CNT_SLAVES                2

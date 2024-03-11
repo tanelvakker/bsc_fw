@@ -121,8 +121,16 @@ void canSetup()
   constexpr std::size_t CAN_TX_QUEUE_LENGTH {10};
   const can::Baudrate baudrate = (u8_mSelCanInverter==ID_CAN_DEVICE_VICTRON_250K) ? can::Baudrate::BAUD_250KBPS :
                                                                                     can::Baudrate::BAUD_500KBPS;
-  const esp_err_t err = CAN.begin(GPIO_NUM_5, // Rx pin
-                                  GPIO_NUM_4, // Tx pin
+  #ifdef LILYGOTCAN485
+    pinMode(PIN_5V_EN, OUTPUT);
+    digitalWrite(PIN_5V_EN, HIGH);
+
+    pinMode(CAN_SE_PIN, OUTPUT);
+    digitalWrite(CAN_SE_PIN, LOW);
+  #endif
+
+  const esp_err_t err = CAN.begin(CAN_RX_PIN, // Rx pin
+                                  CAN_TX_PIN, // Tx pin
                                   baudrate,
                                   CAN_ENABLE_ALERTS,
                                   CAN_RX_QUEUE_LENGTH,

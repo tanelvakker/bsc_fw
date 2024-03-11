@@ -96,31 +96,48 @@ void BscSerial::stopCyclicRun(bool state)
 void BscSerial::setHwSerial(uint8_t u8_devNr, uint32_t baudrate)
 {
   //BSC_LOGI(TAG,"setHwSerial() devNr=%i, baudrate=%i",u8_devNr,baudrate);
+  #ifdef LILYGOTCAN485
+    if(u8_devNr==2) // Hw Serial 0
+    {
+      pinMode(RS485_EN_PIN, OUTPUT);
+      digitalWrite(RS485_EN_PIN, HIGH);
 
-  if(u8_devNr==0) // Hw Serial 1
-  {
-    Serial.end();
-    Serial.begin(baudrate,SERIAL_8N1,SERIAL1_PIN_RX,SERIAL1_PIN_TX);
-        serialDeviceData[u8_devNr].stream_mPort=&Serial;
-  }
-  else if(u8_devNr==1) // Hw Serial 2
-  {
-    Serial1.end();
-    Serial1.begin(baudrate,SERIAL_8N1,SERIAL2_PIN_RX,SERIAL2_PIN_TX);
-        serialDeviceData[u8_devNr].stream_mPort=&Serial1;
-  }
-  else if(u8_devNr==2) // Hw Serial 0
-  {
-    Serial2.end();
-    Serial2.begin(baudrate,SERIAL_8N1,SERIAL3_PIN_RX,SERIAL3_PIN_TX);
-        serialDeviceData[u8_devNr].stream_mPort=&Serial2;
-  }
-  else if(u8_devNr>2 && isSerialExtEnabled()) // Hw Serial 0
-  {
-    Serial2.end();
-    Serial2.begin(baudrate,SERIAL_8N1,SERIAL3_PIN_RX,SERIAL3_PIN_TX);
-        serialDeviceData[u8_devNr].stream_mPort=&Serial2;
-  }
+      pinMode(RS485_SE_PIN, OUTPUT);
+      digitalWrite(RS485_SE_PIN, HIGH);
+
+      pinMode(PIN_5V_EN, OUTPUT);
+      digitalWrite(PIN_5V_EN, HIGH);
+
+      Serial2.end();
+      Serial2.begin(baudrate,SERIAL_8N1,RS485_RX_PIN,RS485_TX_PIN);
+          serialDeviceData[u8_devNr].stream_mPort=&Serial2;
+    }
+  #else
+    if(u8_devNr==0) // Hw Serial 1
+    {
+      Serial.end();
+      Serial.begin(baudrate,SERIAL_8N1,SERIAL1_PIN_RX,SERIAL1_PIN_TX);
+          serialDeviceData[u8_devNr].stream_mPort=&Serial;
+    }
+    else if(u8_devNr==1) // Hw Serial 2
+    {
+      Serial1.end();
+      Serial1.begin(baudrate,SERIAL_8N1,SERIAL2_PIN_RX,SERIAL2_PIN_TX);
+          serialDeviceData[u8_devNr].stream_mPort=&Serial1;
+    }
+    else if(u8_devNr==2) // Hw Serial 0
+    {
+      Serial2.end();
+      Serial2.begin(baudrate,SERIAL_8N1,SERIAL3_PIN_RX,SERIAL3_PIN_TX);
+          serialDeviceData[u8_devNr].stream_mPort=&Serial2;
+    }
+    else if(u8_devNr>2 && isSerialExtEnabled()) // Hw Serial 0
+    {
+      Serial2.end();
+      Serial2.begin(baudrate,SERIAL_8N1,SERIAL3_PIN_RX,SERIAL3_PIN_TX);
+          serialDeviceData[u8_devNr].stream_mPort=&Serial2;
+    }
+  #endif
 }
 
 
@@ -271,29 +288,31 @@ void cbSetRxTxEn(uint8_t u8_devNr, uint8_t e_rw)
   }
   else if(u8_devNr==2)
   {
-    if(e_rw==serialRxTx_RxTxDisable) //RX + TX aus
-    {
-      if(getHwVersion()<2)
+    #ifndef LILYGOTCAN485
+      if(e_rw==serialRxTx_RxTxDisable) //RX + TX aus
+      {
+        if(getHwVersion()<2)
+        {
+          digitalWrite(SERIAL3_PIN_RX_EN, LOW);
+        }
+        else
+        {
+          digitalWrite(SERIAL3_PIN_RX_EN, HIGH);  //32=RXTX_EN; 3=TX_EN
+          digitalWrite(SERIAL3_PIN_TX_EN, LOW);
+        }
+      }
+      else if(e_rw==serialRxTx_TxEn) //TX
+      {
+        digitalWrite(SERIAL3_PIN_RX_EN, HIGH); //LOW
+        if(getHwVersion()>=2) digitalWrite(SERIAL3_PIN_TX_EN, HIGH); //HIGH
+        usleep(20);
+      }
+      else if(e_rw==serialRxTx_RxEn) //RX
       {
         digitalWrite(SERIAL3_PIN_RX_EN, LOW);
+        if(getHwVersion()>=2) digitalWrite(SERIAL3_PIN_TX_EN, LOW); //LOW
       }
-      else
-      {
-        digitalWrite(SERIAL3_PIN_RX_EN, HIGH);  //32=RXTX_EN; 3=TX_EN
-        digitalWrite(SERIAL3_PIN_TX_EN, LOW);
-      }
-    }
-    else if(e_rw==serialRxTx_TxEn) //TX
-    {
-      digitalWrite(SERIAL3_PIN_RX_EN, HIGH); //LOW
-      if(getHwVersion()>=2) digitalWrite(SERIAL3_PIN_TX_EN, HIGH); //HIGH
-      usleep(20);
-    }
-    else if(e_rw==serialRxTx_RxEn) //RX
-    {
-      digitalWrite(SERIAL3_PIN_RX_EN, LOW);
-      if(getHwVersion()>=2) digitalWrite(SERIAL3_PIN_TX_EN, LOW); //LOW
-    }
+    #endif
   }
   else if(u8_devNr>2 && u8_devNr<=10 && getHwVersion()>=2)
   {
